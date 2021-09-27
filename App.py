@@ -15,7 +15,7 @@ file_dir = os.path.dirname(os.path.realpath('__file__'))
 sys.path.insert(0, os.path.abspath(file_path))
 data_dir = file_dir + '/Data/'
 
-def loadData(dir=r"https://github.com/camilo203/FundApp/blob/main/Data/Archivo%20Tablas%20Entrega%20Intermedia.xlsx"):
+def loadData(dir=r"https://res.cloudinary.com/camilo203/raw/upload/v1632715854/Archivo_Tablas_Entrega_Intermedia_ezqmpk.xlsx"):
     data = pd.read_excel(
         dir
     )
