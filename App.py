@@ -269,7 +269,8 @@ def procesarDatos(
     return ProductProductos, CostosEstaciones, a, ProdTotal, UtilidadTotal
 
 st.title("DashBoard Machine Steel")
-st.text_area("","Si desea alterar la información modifique los datos en el excel de la carpeta y recargue la pagina o agregue el archivo modificado aqui:")
+st.text_area("","Descargue el siguiente archivo y agregelo a la aplicación, si desea cambiar valor modifique al archivo y agregue  aqui:")
+st.markdown("[Descargue el archivo aqui](https://res.cloudinary.com/camilo203/raw/upload/v1632715854/Archivo_Tablas_Entrega_Intermedia_ezqmpk.xlsx)")
 fileN =  st.file_uploader("Ingrese un archivo:",".xlsx")
 try:
     (
