@@ -9,7 +9,7 @@ import plotly.express as px
 st.set_page_config(page_title="Machine Steel")
 
 
-def loadData(dir=r"https://res.cloudinary.com/camilo203/raw/upload/v1632715854/Archivo_Tablas_Entrega_Intermedia_ezqmpk.xlsx"):
+def loadData(dir=r"https://res.cloudinary.com/camilo203/raw/upload/v1632715854/Archivo_Tablas_Entrega_Intermedia_ezqmpk.xlsx", engine="openpyxl"):
     data = pd.read_excel(
         dir
     )
