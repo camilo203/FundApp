@@ -1,3 +1,4 @@
+from math import prod
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -9,9 +10,9 @@ import plotly.express as px
 st.set_page_config(page_title="Machine Steel")
 
 
-def loadData(dir=r"https://res.cloudinary.com/camilo203/raw/upload/v1632715854/Archivo_Tablas_Entrega_Intermedia_ezqmpk.xlsx", engine="openpyxl"):
+def loadData(dir=r"https://res.cloudinary.com/camilo203/raw/upload/v1632715854/Archivo_Tablas_Entrega_Intermedia_ezqmpk.xlsx"):
     data = pd.read_excel(
-        dir
+        dir,engine="openpyxl"
     )
     Productos = data.iloc[0:17, 0:4].copy()
     Productos.columns = Productos.iloc[0]
@@ -87,18 +88,12 @@ def loadData(dir=r"https://res.cloudinary.com/camilo203/raw/upload/v1632715854/A
 
 
 def procesarDatos(
-    Productos, Estaciones, Recursos, ManoDeObraMes, Gastos, CostoMovimiento, Precios
+    Productos, Estaciones, Recursos, ManoDeObraMes, Gastos, CostoMovimiento, Precios, MDist=r"https://res.cloudinary.com/camilo203/raw/upload/v1633291086/MatrizD_m5kex6.xlsx"
 ):
-    ancho = [random.randint(9, 15) for _ in range(13)]
-    alto = [random.randint(5, 10) for _ in range(13)]
-    TamanioEstaciones = pd.DataFrame()
-    TamanioEstaciones["Alto"] = alto
-    TamanioEstaciones["Ancho"] = ancho
-    TamanioEstaciones.index = Estaciones.index
-    MatrizDistancia = pd.DataFrame()
-    MatrizDistancia["Estación"] = [x for x in range(1, 14)]
-    MatrizDistancia[[x for x in range(1, 14)]] = np.random.randint(11, 25, (13, 13))
-    MatrizDistancia.set_index("Estación", inplace=True)
+    MatrizDistancia = pd.read_excel(MDist,engine="openpyxl")
+    MatrizDistancia = MatrizDistancia.set_index("Estación")
+    MatrizDistancia.columns.name = "Estación"
+    MatrizDistancia.index.name = ""
     MatrizFlujos = MatrizDistancia.copy()
     MatrizFlujos[:] = np.zeros((13, 13))
     CostosEstaciones = pd.DataFrame()
@@ -266,12 +261,12 @@ def procesarDatos(
         Productos["Demanda mensual"].values * a.loc["UtilidadUnitaria"].values
     )
     UtilidadTotal = a.loc["UtilidadMensual"].sum()
-    return ProductProductos, CostosEstaciones, a, ProdTotal, UtilidadTotal
+    return ProductProductos, CostosEstaciones, a, ProdTotal, UtilidadTotal, MatrizDistancia
 
 st.title("DashBoard Machine Steel")
-st.text_area("","Descargue el siguiente archivo y agregelo a la aplicación, si desea cambiar valor modifique al archivo y agregue  aqui:")
 st.markdown("[Descargue el archivo aqui](https://res.cloudinary.com/camilo203/raw/upload/v1632715854/Archivo_Tablas_Entrega_Intermedia_ezqmpk.xlsx)")
-fileN =  st.file_uploader("Ingrese un archivo:",".xlsx")
+st.text_area("","Sí desea cambiar valor de algun dato descargue el archivo de link de arriba, modifique y agregue  aqui:")
+fileN =  st.file_uploader("Ingrese el archivo aqui si modifico los datos:",".xlsx")
 
 try:
     (
@@ -291,6 +286,7 @@ try:
         costosTotales,
         prodTotal,
         utilidadTotal,
+        MatrizDistancia
     ) = procesarDatos(
         Productos, Estaciones, Recursos, ManoDeObraMes, Gastos, CostoMovimiento, Precios
     )
@@ -310,6 +306,11 @@ try:
     st.text("Tabla con la información de los precios de los productos")
     st.dataframe(Precios)
     st.text("")
+    st.text("La configuración actual de la empresa es la siguiente:")
+    st.image(r"https://res.cloudinary.com/camilo203/image/upload/v1633291537/Configuraci%C3%B3nActualPlanta_zpa92t.png")
+    st.text("Matriz de distancia entre estaciones:")
+    st.dataframe(MatrizDistancia)
+
 
     st.subheader("Los indicadores de productividad y costos son los siguientes: ")
     productos = Productos.Producto.to_list()
@@ -345,7 +346,6 @@ try:
 
     st.text("Indicadores de productividad parciales y totales de mano de obra y materia primar por estación")
 
-    st.dataframe(productividaEstaciones)
     estaciones_selec = st.multiselect("Escoga las estaciones que desea ver",productividaEstaciones.columns.tolist(), default=productividaEstaciones.columns.tolist())
     filtradoEstundp = productividaEstaciones.loc["ProdMO (und/$)":"ProdMP+MO (und/$)", estaciones_selec].T
     filtradoEstundp.index.name = "Estación"
@@ -362,12 +362,92 @@ try:
 
     st.subheader(f"La productividad total de la empresa es de {round(prodTotal,2)} \$/\$")
 
-    st.subheader(f"La utilidad total de la empresa mensual es de ${round(utilidadTotal,1)}")
+    st.subheader(f"La utilidad total de la empresa mensual es de ${round(utilidadTotal,1):,}")
 
-
+    st.header("A partir del analísis de la distribución de planta se encontró la siguiente solución que optimiza el layout de la compañia")
+    st.image(r"https://res.cloudinary.com/camilo203/image/upload/v1633292308/ConfigOpti_cb4tnc.png")
+    st.text("Matriz distancia configuraccón optimizada")
+    
+    
 
 except:
     st.text_area("","No se ingreso un archivo valido, guiarse con el formato dado en el manual, recuerde que los datos deben estar en la primera hoja del excel")
 
+try:
+    (
+        Productos,
+        Estaciones,
+        Recursos,
+        MO,
+        ManoDeObraMes,
+        Gastos,
+        CM,
+        CostoMovimiento,
+        Precios,
+    ) = loadData(fileN) if fileN else loadData() 
+    (
+        productividadProds,
+        productividaEstaciones,
+        costosTotales,
+        prodTotal,
+        utilidadTotal,
+        MatrizDistancia
+    ) = procesarDatos(
+        Productos, Estaciones, Recursos, ManoDeObraMes, Gastos, CostoMovimiento, Precios, r"https://res.cloudinary.com/camilo203/raw/upload/v1633292680/MatrizDOpti_cxs0dg.xlsx"
+    )
+    st.text("Matriz de distancia entre estaciones:")
+    st.dataframe(MatrizDistancia)
 
+    st.subheader("Los indicadores de productividad y costos son los siguientes: ")
+    productos = Productos.Producto.to_list()
+    departamento_selec = st.multiselect("Escoga de que productos desea ver los costos totales:", productos,key=[x+3 for x in range(16)], default=productos)
 
+    st.text("Costos totales unitarios por producto")
+    filtradosProds = costosTotales.loc["CostoTotalUnitario",departamento_selec] 
+    filtradosProds.index.name = "Producto"
+    bar_chart_costoProds = px.bar(filtradosProds,x=filtradosProds.index,y="CostoTotalUnitario", template="plotly_white")
+    st.plotly_chart(bar_chart_costoProds)
+    st.dataframe(filtradosProds)
+
+    st.text("Rentabilidad Mensual de los productos")
+    filtradosRentProds = costosTotales.loc["UtilidadMensual",departamento_selec] 
+    filtradosRentProds.index.name = "Producto"
+    bar_chart_rentProds = px.bar(filtradosRentProds,x=filtradosRentProds.index,y="UtilidadMensual", template="plotly_white")
+    st.plotly_chart(bar_chart_rentProds)
+    st.dataframe(filtradosRentProds)
+
+    st.text("Indicadores de producitividad parciales y totales de mano de obra y materia prima por producto")
+    filtradosProductProds = productividadProds.loc["ProductividadMP (und/$)":"ProductividadMO+MP (und/$)", departamento_selec].copy()
+    filtradosProductProds = filtradosProductProds.T
+    filtradosProductProds.index.name = "Productos"
+    bar_chart_prodProds = px.bar(filtradosProductProds, x=filtradosProductProds.index, y =filtradosProductProds.columns ,barmode="group", template="plotly_white", title="Productividad (und/$) parciales y totales")
+    bar_chart_prodProds.update_layout(yaxis_tickformat=".2e")
+    st.plotly_chart(bar_chart_prodProds)
+    st.dataframe(filtradosProductProds.applymap(lambda x: f"{x:.2e}"))
+    filtradosTotalTiempo = productividadProds.loc["ProductividadMO (und/min)":"ProductividadMO (und/min)", departamento_selec].T.copy()
+    filtradosTotalTiempo.index.name = "Productos"
+    bar_chart_prodTiemp = px.bar(filtradosTotalTiempo, x=filtradosTotalTiempo.index, y=filtradosTotalTiempo.columns, template="plotly_white", title="Productividad MO (und/min)")
+    st.plotly_chart(bar_chart_prodTiemp)
+    st.dataframe(filtradosTotalTiempo)
+
+    st.text("Indicadores de productividad parciales y totales de mano de obra y materia primar por estación")
+
+    estaciones_selec = st.multiselect("Escoga las estaciones que desea ver",productividaEstaciones.columns.tolist(),key=[x+4 for x in range(13)] ,default=productividaEstaciones.columns.tolist())
+    filtradoEstundp = productividaEstaciones.loc["ProdMO (und/$)":"ProdMP+MO (und/$)", estaciones_selec].T
+    filtradoEstundp.index.name = "Estación"
+    barc_Estp = px.bar(filtradoEstundp, x=filtradoEstundp.index, y= filtradoEstundp.columns, template="plotly_white", title="Productividad en und/$ para cada estación", barmode="group")
+    barc_Estp.layout.xaxis.dtick = 1
+    st.plotly_chart(barc_Estp)
+    st.dataframe(filtradoEstundp)
+
+    filtradoEstt = productividaEstaciones.loc["ProdMO (und/min)":"ProdMO (und/min)", estaciones_selec].T
+    filtradoEstt.index.name = "Estación"
+    barc_estt = px.bar(filtradoEstt, x=filtradoEstt.index, y=filtradoEstt.columns, template="plotly_white", title="Productividad MO (und/min)")
+    st.plotly_chart(barc_estt)
+    st.dataframe(filtradoEstt)
+
+    st.subheader(f"La productividad total de la empresa es de {round(prodTotal,2)} \$/\$")
+
+    st.subheader(f"La utilidad total de la empresa mensual es de ${round(utilidadTotal,1):,}")
+except:
+    pass
